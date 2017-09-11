@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import os
+import sys
 class Reflex_Agent():
 	def __init__(self,board):
 		#initialzing the agent in the environment
@@ -11,19 +12,19 @@ class Reflex_Agent():
 	def random_action(self,board):
 		#The function of random_action taken by the agent
 		act = np.random.randint(0,4)
+		#action is selected at random		
 		if ((act == 0) and (self.x < board.shape[0] - 1)):
-			self.x += 1
+			self.x += 1  #going right
 		elif ((act == 1) and (self.x > 0 )):
-			self.x -= 1
+			self.x -= 1  #going left
 		elif ((act == 2) and (self.y < board.shape[0] - 1)):
-			self.y += 1
+			self.y += 1  #going down
 		elif ((act == 3) and (self.y > 0)):
-			self.y -= 1
+			self.y -= 1  #going up
 		
 
 	def Action(self,board):
 		#actions are in random....
-		#print [self.x ,self.y]
 		if (board[self.x , self.y] == 1):
 			board[self.x , self. y ] = 0
 			print '*******  cleaning dirt at' + str([self.x , self.y]) + '  ***************************'
@@ -31,22 +32,23 @@ class Reflex_Agent():
 		agent.Display(board)
 		agent.reward(board)
 		time.sleep(0.5)
-		os.system('clear')
+		#os.system('clear')
 		agent.random_action(board)
 		agent.Action(board)
-
+		print '**next_iteration**'
 	
 	def reward(self,board):
 		#Utility function to check the current clean squares
-		shape_board = (board.shape[0])**2
+		shape_board = (board.shape[0]*board.shape[1])
 		reward = shape_board - np.count_nonzero(board)
 		print 'Utility at this stage is ' + str(reward)
 		if ( reward == shape_board):
 			print '*************Square is cleaned***************'
-			while(1):
-				pass
+			sys.exit(0)
+			#closes the program...
 
 	def Display(self,board):
+		#Displays user the current environment and the agent
 		print '******The emvironment is shown below *********'
 		print board
 		self.agent_board[self.x , self. y ] = 1
@@ -73,11 +75,22 @@ class board():
 			# Making the block choosed as dirt block
 			self.board[x_cor,y_cor] = 1  # 1 indicates the dirt block
 				
+	def initailize_problem(self):
+		self.board = np.ones((1,2),dtype  = 'int')
 
 if __name__ == '__main__':
+	# User enter the size of environment
 	size = (input('enter the size of the environment'))
+	#env. is created	
 	env = board(size)
-	env.initailize_the_environment_randomly()
+	#Intialize dirt block randomly
+	#1 : Dirt , 0: Clean
+	opt = input('Enter 0 if u want to intialize randomly, 1 to fill it according to the example ')
+	if ( opt == 0 ):
+		env.initailize_the_environment_randomly()
+	else:
+		env.initailize_problem()	
 	print env.board
-	agent = Reflex_Agent(env.board)
+	#Creating  a reflex agent for the environnmwnt.
+	agent = Reflex_Agent(env.board)	
 	agent.Action(env.board)
