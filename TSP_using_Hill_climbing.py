@@ -1,8 +1,11 @@
-#TSP Problem using Hill climbing algorithms
+#Tarvelling Saleman problem using Hill Climbing Alogrithm
+#Author : Sanket Gujar (srgujar@wpi.edu)
+#Github : 
+#reference : AIMA-Python 
+
 import numpy as np
 import sys
 import time
-Board_size = 20
 number_cities = 10
 
 class Problem():
@@ -29,8 +32,13 @@ class Problem():
 		self.order = [0,1,2,3,4,5,6,7]
 		if city == 0 :
 			return ( [(10,20),(3,5),(25,30),(15,35),(2,9), (30,20) , (5,5) , (20,15)] )
-	
-
+		if city == 1 :
+			return ( [(55,25),(3,10),(5,30),(10,35),(2,9), (30,20) , (30,25) , (20,35)] )
+		if city == 2:
+			return ( [(80,40),(5,15),(10,45),(15,55),(4,14), (45,30) , (45,40) , (30,52)] )
+		if city == 3:
+			return ( [(2,7),(4,22),(8,26), (1,7), (22,15),(41,18), (15,24), (22,18)  ] )
+        
 
 	def get_cost(self):
 		#return the cost of travelling cities in order and connecting to the first city 
@@ -48,8 +56,18 @@ class Problem():
 
 
 def hill_climbing(Problem):
-	#Hill climbing alogrithm
-	#find the minimum cost between the neighbous...
+	'''
+	Hill climbing algorithm
+	here the value is the path cost so we need to find the minimum cost between the neighbous.
+	iteration_count : count the iteration performed
+	continous_count : count the CONTINOUS neighbours where the cost was greater then the current cost.
+	 				  it avoids the plateau conditions, increase the count for more accuarte result.
+	 				  but also note it will increase the execution time.
+	current_cost    : the cost of present order
+
+	previous_cost    : the cost of previous lowest cost order_new
+	create_neighbours : return the neighbours of the current order. 				  	 	
+	'''
 	iteration_count = 0  #counts the iteration
 	continous_count = 0  #count for how long neighbour has not produced minimum, avoid getting stuck.
 	lowest_cost = 999999 #infinity
@@ -74,6 +92,7 @@ def hill_climbing(Problem):
 		iteration_count += 1
 		
 '''	
+	#lexiographical swapping algorithm
 	def lexical_swap(self):
 		#print self.order
 		largest_index = - 1
@@ -96,5 +115,5 @@ def hill_climbing(Problem):
 '''
 
 if __name__ == '__main__':
-	prob =Problem(8)
+	prob = Problem(8)
 	hill_climbing(prob)

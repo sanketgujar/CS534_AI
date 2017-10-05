@@ -1,29 +1,33 @@
-#TSP A* Problem .....
+#Travelling salesman problem using Astar and RBFS
+#Author: Sanket Gujar (srgujar@wpi.edu)
+#Github : 
 from utils import *
 
+
+'''
+Problem class for TSP
+goal_test : Test the state matches to the goal state
+action : return available cities remaining to visit.
+result: add the city to list of city visited.  
+g : path_cost, distance of city visited in order
+h : MST heuristic, distance of city not visited in order.
+f : g + h
+'''
 class Problem():
-    def __init__(self, num_cities):
+    def __init__(self, num_cities,city_selection):
         #initialize the class 
         self.num_cities = num_cities
-        self.city = self.select_city(0)
+        self.city = self.select_city(city_selection)
         self.initial_state = []
         self.initial_city = self.order[0]
         self.city_visited = []
-        print 'The location of the cities are : ' + str(self.city) 
+        print 'The coordinate of location of the cities are : ' + str(self.city) 
         print 'In order  [0,1,2,3,4,5,6,7]' 
         
 
-    def create_neighbours(self):
-        #swaps using random variable
-        #swaps the order of the cities visited
-        var1 = np.random.randint(0,self.num_cities)
-        var2 = np.random.randint(0,self.num_cities)
-        self.order[var1] , self.order[var2] = self.order[var2] , self.order[var1]
-        #print self.order
-
     def goal_test(self,state):
         if len(state) == self.num_cities:
-            print 'Goal reached., the path is ' + str(state)
+            print 'Goal reached., the path is ' + str(state) +  ' and the cost is : ' + str(self.g(state))
             return True
         else:
             return False    
@@ -32,8 +36,20 @@ class Problem():
         #select city from example
         self.order = [0,1,2,3,4,5,6,7]
         if city == 0 :
-            return ( [(10,20),(3,5),(25,30),(15,35),(2,9), (30,20) , (5,5) , (20,15)] )
-    
+            return ( [(3,10),(5,30),(10,35),(2,9), (55,25),(30,20) , (30,25) , (20,35)] )
+        
+        if city == 4:    
+            return ( [(55,25),(3,10),(5,30),(10,35),(2,9), (30,20) , (30,25) , (20,35)] )
+            
+        if city == 1:    
+            return ( [(1,10),(5,30), (2,9),(10,35), (30,20),(55,25), (20,35), (30,25)  ] )
+                
+        if city == 2:
+            return ( [(80,40),(5,15),(10,45),(15,55),(4,14), (45,30) , (45,40) , (30,52)] )
+        
+        if city == 3:
+            return ( [(2,7),(4,22),(8,26), (1,7), (22,15),(41,18), (15,24), (22,18)  ] )
+                
  
     def action(self,state):
         action = []
@@ -52,7 +68,7 @@ class Problem():
         return  (dist_sum)
     
     def h(self,state):    
-        #return the MST
+        #return the MST heuristics
         city_not_visited = []
         for i in range(len(self.order)):
             if ( check_visited(state,self.order[i])):
@@ -68,7 +84,6 @@ class Problem():
 
     def f(self,state):
         return ( self.g(state)  + self.h(state) )
-
 
 
     def result(self,order,a):        
@@ -104,28 +119,18 @@ class Node():
         return Node(next, puzzle ,self , action , puzzle.g(next)) 
 
 
-
+#checks if the city is visited or not in list a
 def check_visited(a,b):
     for i in range(len(a)):
         if a[i] == b :
             return False
     return True
 
-def astar_search(problem, f=None):
-    """A* search is best-first graph search with f(n) = g(n)+h(n).
-    You need to specify the h function when you call astar_search, or
-    else in your Problem subclass."""
-    #f = memoize(h or problem.h, 'h')
-    return best_first_graph_search(problem, f)
 
-def best_first_graph_search(problem, f):
-    """Search the nodes with the lowest f scores first.
-    You specify the function f(node) that you want to minimize; for example,
-    if f is a heuristic estimate to the goal, then we have greedy best
-    first search; if f is node.depth then we have breadth-first search.
-    There is a subtlety: the line "f = memoize(f, 'f')" means that the f
-    values will be cached on the nodes as they are computed. So after doing
-    a best first search you can examine the f values of the path returned."""
+#AIMA-Python Modified version...
+#Performs A star
+#will return optimal path if heuristic is admissible
+def astar_search(problem, f=None):
     f = memoize(f, 'f')
     node = Node(problem.initial_state,problem)
     if problem.goal_test(node.state):
@@ -148,18 +153,24 @@ def best_first_graph_search(problem, f):
                     frontier.append(child)
     return None
 
-def recursive_best_first_search(problem, h=None):
-    """[Figure 3.26]"""
-    h = memoize(h or problem.h, 'h')
 
+
+#AIMA-Pyhton modeified version.....
+#Performs the RBFS search 
+def recursive_best_first_search(problem, h=None):
+    h = memoize(h or problem.h, 'h')
     def RBFS(problem, node, flimit):
         if problem.goal_test(node.state):
-            return node, 0   # (The second value is immaterial)
+            return node, 0   
+        #print ' node: ' + str(node.state)
         successors = node.expand(problem)
         if len(successors) == 0:
             return None, 99999
         for s in successors:
             s.f = max( s.path_cost + problem.h(s.state), node.f)
+            #print ' state : ' + str(s.state) + '  s.f' + str(s.f)
+            #print 's.g  +'  + str(problem.g(s.state))
+            #print 's.h  +'  + str(problem.h(s.state))
         while True:
             # Order by lowest f value
             successors.sort(key=lambda x: x.f)
@@ -170,12 +181,14 @@ def recursive_best_first_search(problem, h=None):
                 alternative = successors[1].f
             else:
                 alternative = 99999
+            #print '  best ' + str(best.state)
+            #k = input('enter key')    
             result, best.f = RBFS(problem, best, min(flimit, alternative))
             if result is not None:
                 return result, best.f
 
     node = Node(problem.initial_state,problem)
-    #node.f = h(node.state)
+    node.f = problem.g(node.state)
     result, bestf = RBFS(problem, node, 99999)
     return result
 
@@ -183,9 +196,11 @@ def recursive_best_first_search(problem, h=None):
 
 
 if __name__ == '__main__':
-    problem = Problem(8)
-    #print problem.actions(4,[1,2,3,5] )
-    #print problem.result([1,3,4],5)
-    #print problem.goal_test()
-    astar_search(problem,problem.f)
-    recursive_best_first_search(problem,problem.h)
+    for i in range(4):
+        print '\n\n**************Defining problem on new cities*************************'
+        problem = Problem(8,i)
+        print ' Starting A star search .....'
+        astar_search(problem,problem.f)
+        print ' Starting RBFS search .......'
+        recursive_best_first_search(problem,problem.h)
+    

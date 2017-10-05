@@ -1,17 +1,12 @@
-#8 Puzzle  problem using A star and RBFS
-#Author : Sanket Gujar (srgujar@wpi.edu)
-#Github : 
-
+#TSP A* Problem .....
 from utils import *
+
 import numpy as np
 from copy import deepcopy
 import time
 Debug = 0
 
 
-
-
-#return the manhattan_distance between two states. 
 def manhattan_distance(state1,state2):
 	man_distance = 0
 	for i in range(0,3):
@@ -26,16 +21,8 @@ def manhattan_distance(state1,state2):
 
 
 
-'''
-Problem class for 8 Puzzle
-initial_state : any random state
-goal_test : Test the state matches to the goal state
-action : return possible directions where the blank can slide.
-result: swipe the blank as defined in action.  
-g : path_cost
-h : manhattan_distance heuristic
-f : g + h
-'''
+
+
 class Problem():
 	def __init__(self, state,goal_state):
 		self.initial = state
@@ -66,8 +53,7 @@ class Problem():
 
 	def goal_test(self,state):
 		if ((state) == self.goal_state).all():
-			print 'Goal reached., the current state  is '
-			print (state)
+			print 'Goal reached., the path is ' + str(state)
 			return True
 		else:
 			return False    
@@ -97,7 +83,7 @@ class Problem():
 			#for West
 			puzzle[blank_space[0],blank_space[1]], puzzle[blank_space[0], blank_space[1] + 1] = \
 			puzzle[blank_space[0] , blank_space[1] + 1] , puzzle[blank_space[0],blank_space[1]]
- 			
+			
 		return puzzle	
 
 
@@ -112,26 +98,20 @@ class Problem():
 
 
 
-'''
-Node class
-expand: expand the current node by creating result node.
-child_node : return the child node for the particular action.
-'''
+
 class Node():
     def __init__(self,state , puzzle, parent = None , action = None , path_cost = 0):
         self.state = state
         #print self.state
         self.parent = parent
         self.action = action
-        #self.path_cost = parent.path_cost + 1
+        self.path_cost = path_cost
         self.f = (puzzle.h(self.state) + puzzle.g(self.state))
         if self.parent:
-            self.path_cost = parent.path_cost + 1
+            self.depth = parent.depth + 1
         else:
-            self.path_cost = 0 
+            self.depth = 0 
 
-        #print 'path_cost' + str(self.path_cost)
-        #time.sleep(0.5)
 
     def expand(self , puzzle):
         # return all the nodes reachable for the node..
@@ -146,10 +126,28 @@ class Node():
         return Node(next, puzzle ,self , action , puzzle.g(next)) 
 
 
-#perform Astar search algorithm....
-#uses Priority Queue giving priority to f
-#reference : AIMA Python 
+
+def check_visited(a,b):
+    for i in range(len(a)):
+        if a[i] == b :
+            return False
+    return True
+
 def astar_search(problem, f=None):
+    """A* search is best-first graph search with f(n) = g(n)+h(n).
+    You need to specify the h function when you call astar_search, or
+    else in your Problem subclass."""
+    #f = memoize(h or problem.h, 'h')
+    return best_first_graph_search(problem, f)
+
+def best_first_graph_search(problem, f):
+    """Search the nodes with the lowest f scores first.
+    You specify the function f(node) that you want to minimize; for example,
+    if f is a heuristic estimate to the goal, then we have greedy best
+    first search; if f is node.depth then we have breadth-first search.
+    There is a subtlety: the line "f = memoize(f, 'f')" means that the f
+    values will be cached on the nodes as they are computed. So after doing
+    a best first search you can examine the f values of the path returned."""
     f = memoize(f, 'f')
     node = Node(problem.initial,problem)
     if problem.goal_test(node.state):
@@ -161,7 +159,7 @@ def astar_search(problem, f=None):
         node = frontier.pop()
         if problem.goal_test(node.state):
             return node
-        #print node.state
+        print node.state
         explored.add(tuple([tuple(row) for row in node.state]))
         for child in node.expand(problem):
             if tuple([tuple(row) for row in child.state]) not in explored and child not in frontier:
@@ -176,7 +174,7 @@ def astar_search(problem, f=None):
 
 visited = []
 
-#check if the state is visited or not.
+
 def check_visted(n1,n2):
 	for i in range(len(n2)):
 		if (n1 == n2[i]).all():
@@ -184,8 +182,42 @@ def check_visted(n1,n2):
 	return False
 
 
-#performs RBFS:
-#reference AIMA Python
+
+def recursive_best_first_search(problem, h=None):
+    """[Figure 3.26]"""
+    h = memoize(h or problem.h, 'h')
+
+    def RBFS(problem, node, flimit):
+        if problem.goal_test(node.state):
+            return node, 0   # (The second value is immaterial)
+        successors = node.expand(problem)
+        if len(successors) == 0:
+            return None, infinity
+        for s in successors:
+            s.f = max(s.path_cost + h(s), node.f)
+        while True:
+            # Order by lowest f value
+            successors.sort(key=lambda x: x.f)
+            best = successors[0]
+            if best.f > flimit:
+                return None, best.f
+            if len(successors) > 1:
+                alternative = successors[1].f
+            else:
+                alternative = infinity
+            result, best.f = RBFS(problem, best, min(flimit, alternative))
+            if result is not None:
+                return result, best.f
+
+    node = Node(problem.initial)
+    node.f = h(node)
+    result, bestf = RBFS(problem, node, infinity)
+    return result
+
+
+
+
+'''
 def RBFS(puzzle , node , f_limit):
 	#print node.state
 	global visited
@@ -198,16 +230,19 @@ def RBFS(puzzle , node , f_limit):
 		return None, 9999
 	for c in child:
 		#print c.state
-		#print 'cost , g : ' +str(puzzle.get_cost(c.state))
-		#print 'cost , h  :' + str(puzzle.get_heuristics(c.state))
-		#print ' parent cost :' + str(node.f)
+		
+		print 'cost , g : ' +str(puzzle.get_cost(c.state))
+		print 'cost , h  :' + str(puzzle.get_heuristics(c.state))
+		print ' parent cost :' + str(node.f)
+		
 		if check_visted(c.state , visited):
-			c.f = max( node.f + puzzle.h(c.state) , node.f )  
+			c.f = max( node.f + puzzle.h(c.state) + puzzle.g(c.state), node.f )  
 		else:
 			c.f = max( puzzle.g(c.state) + puzzle.h(c.state), node.f )
 		#c.f = (puzzle.get_heuristics(c.state))
 		#print c.f
 	#time.sleep(1)
+	
 	while True:
 		child.sort(key = lambda x:x.f)
 		best_child = child[0]
@@ -226,46 +261,46 @@ def implement_RBFS(puzzle,h = None):
 	node = Node(puzzle.initial,puzzle)
 	node.f = puzzle.h(node.state)
 	result,best_f = RBFS(puzzle , node , 9999)
-	#print 'Goal_state_reached  :' + str( result.state )
+	print 'Goal_state_reached  :' + str( result.state )
+'''
 
-
-#the main function
 if __name__ == '__main__':
-	random_board = [np.array((1,0,6,5,2,8,7,3,4)),
-	np.array((1,6,4,3,5,0,7,8,2)),
-	np.array((2,6,4,3,1,8,5,7,0))]
-	for i in range(0,len(random_board)):
-		board = random_board[i]
-		board = board.reshape((3,3))
-		goal_state = np.arange(9).reshape((3,3))
-		problem = Problem(board,goal_state)
-		print  '\n\n\n*************************************************'
-		print  ' The Random puzzle problem is : '
-		print problem.initial
-		
-		
-		print 'Started A star search'
-		start_time = time.clock()
-		end_node = astar_search(problem, problem.f)
-		print 'Goal reached for A_ star in : ' + str(time.clock() - start_time ) 
-		
-		print 'started RBFS search '
-		start_time = time.clock()
-		implement_RBFS(problem,problem.f)
-		print 'Goal reached for RBFS in    : '  + str(time.clock() - start_time ) 
-		
-		'''
-		#if Debug == 1:
-			#FOR DEBUGGING PURPOSE ONLY
-			#action check
-			#action =  problem.action(problem.initial)
-			#print action
-			#for i in range(len(action)):
-			#	print problem.result(problem.initial , action[i])
-			#print ( puzzle.goal_test(puzzle.goal_state) )
-			#parent_node =  Node(puzzle.initial_state)
-			#parent_node.child_node(puzzle,3)
-			#ch = parent_node.expand(puzzle)
-			#for i in range( len(ch)):
-			#	print ch[i].state
-		'''	
+	board = np.random.permutation(np.arange(9))
+	#board = np.array((7,2,4,5,0,6,8,3,1))
+	#board = np.array((1,0,6,5,2,8,7,3,4))
+	#board = np.array((1,6,4,3,5,0,7,8,2))
+	#board = np.array((7,5,3,1,0,4,8,6,2))
+	#board = np.array((2,6,4,3,1,8,5,7,0))
+	#board = np.array((8,6,2,0,4,5,7,3,1))
+	board = board.reshape((3,3))
+	goal_state = np.arange(9).reshape((3,3))
+	problem = Problem(board,goal_state)
+	print problem.initial
+	#print problem.action(board)
+
+	'''
+	action check
+	action =  puzzle.action(puzzle.initial_state)
+	for i in range(len(action)):
+		print puzzle.result(puzzle.initial_state , action[i])
+	#print ( puzzle.goal_test(puzzle.goal_state) )
+	'''
+	#parent_node =  Node(puzzle.initial_state)
+	#parent_node.child_node(puzzle,3)
+	'''
+	ch = parent_node.expand(puzzle)
+	for i in range( len(ch)):
+		print ch[i].state
+	'''
+	#start_time = time.clock()
+	#end_node = astar_search(problem, problem.f)
+	#print problem.initial
+	#print 'Goal reached for A_ star in : ' + str(time.clock() - start_time ) 
+	
+
+
+	'''
+	start_time = time.clock()
+	implement_RBFS(problem,problem.f)
+	print 'Goal reached for RBFS in    : '  + str(time.clock() - start_time ) 
+	'''	
