@@ -8,7 +8,9 @@ from copy import deepcopy
 import time
 Debug = 0
 
-
+#nodes
+a_star_nodes = 0
+rbfs_nodes = 0
 
 
 #return the manhattan_distance between two states. 
@@ -159,6 +161,8 @@ def astar_search(problem, f=None):
     explored = set()
     while frontier:
         node = frontier.pop()
+        global a_star_nodes
+        a_star_nodes += 1
         if problem.goal_test(node.state):
             return node
         #print node.state
@@ -201,6 +205,8 @@ def RBFS(puzzle , node , f_limit):
 		#print 'cost , g : ' +str(puzzle.get_cost(c.state))
 		#print 'cost , h  :' + str(puzzle.get_heuristics(c.state))
 		#print ' parent cost :' + str(node.f)
+		global rbfs_nodes
+		rbfs_nodes += 1
 		if check_visted(c.state , visited):
 			c.f = max( node.f + puzzle.h(c.state) , node.f )  
 		else:
@@ -243,17 +249,19 @@ if __name__ == '__main__':
 		print  ' The Random puzzle problem is : '
 		print problem.initial
 		
-		
+		global a_star_nodes
 		print 'Started A star search'
 		start_time = time.clock()
 		end_node = astar_search(problem, problem.f)
 		print 'Goal reached for A_ star in : ' + str(time.clock() - start_time ) 
-		
+		print 'the nodes visited by A* '  + str(a_star_nodes)
+
 		print 'started RBFS search '
 		start_time = time.clock()
 		implement_RBFS(problem,problem.f)
 		print 'Goal reached for RBFS in    : '  + str(time.clock() - start_time ) 
-		
+		global rbfs_nodes
+		print 'the nodes visited by '+ str(rbfs_nodes)
 		'''
 		#if Debug == 1:
 			#FOR DEBUGGING PURPOSE ONLY
